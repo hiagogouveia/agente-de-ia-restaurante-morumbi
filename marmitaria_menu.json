@@ -1,0 +1,409 @@
+{
+    "cardapio": {
+        "Marmitex do Dia": [
+            {
+                "nome": "Feijoada Completa",
+                "descricao": "Arroz, Feijoada Completa, Couve Refogada, Laranja, Farofa da Casa e Salada do Dia.",
+                "precos": {
+                    "Mini": "R$ 17,00",
+                    "Média": "R$ 20,00",
+                    "Grande": "R$ 22,00",
+                    "Executiva": "R$ 25,00"
+                }
+            },
+            {
+                "nome": "Frango Assado",
+                "descricao": "Arroz, Feijão, Frango Assado, Espaguete Alho e Óleo, Batata Rústica e Salada do Dia.",
+                "precos": {
+                    "Mini": "R$ 17,00",
+                    "Média": "R$ 20,00",
+                    "Grande": "R$ 22,00",
+                    "Executiva": "R$ 25,00"
+                }
+            },
+            {
+                "nome": "Bife à Cavalo",
+                "descricao": "Arroz, Feijão c/ Bacon, Bife á Cavalo, Farofa da Casa, Batata Chips e Salada do Dia",
+                "precos": {
+                    "Mini": "R$ 18,90",
+                    "Média": "R$ 21,90",
+                    "Grande": "R$ 23,90",
+                    "Executiva": "R$ 26,90"
+                }
+            },
+            {
+                "nome": "Tilápia",
+                "descricao": "Arroz, Feijão c/ Bacon, Tilápia, Batata Chips e Salada do Dia",
+                "precos": {
+                    "Mini": "R$ 19,90",
+                    "Média": "R$ 22,90",
+                    "Grande": "R$ 24,90",
+                    "Executiva": "R$ 27,90"
+                }
+            },
+            {
+                "nome": "Marmitex C/ Ovos Fritos",
+                "descricao": "Arroz, Feijão, 2 Ovos Fritos, Legumes e Salada. (Tamanho Média)",
+                "preco": "R$ 19,00"
+            },
+            {
+                "nome": "Marmitex de Omelete de Queijo",
+                "descricao": "Arroz, Feijão, Omelete de Queijo, Legumes e Salada.",
+                "preco_base": "A partir de R$ 22,00"
+            }
+        ],
+        "CardapioSemanal": {
+            "Segunda-feira": [
+                {
+                    "opcao": "Opção 1",
+                    "prato": "Frango Assado",
+                    "acompanhamentos": "Espaguete Alho e Óleo, Arroz e Feijão, Purê de Batata, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 2",
+                    "prato": "Lasanha à Bolonhesa",
+                    "acompanhamentos": "Legumes Refogados, Arroz e Feijão, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 3",
+                    "prato": "Bife à Cavalo",
+                    "acompanhamentos": "Batata Chips, Arroz e Feijão, Farofa da Casa, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 4",
+                    "prato": "Tilápia",
+                    "acompanhamentos": "Batata Chips, Arroz e Feijão, Salada do Dia."
+                },
+                {
+                    "info_extra": "Buffet Livre: R$ 30,00 | Prato-Feito: R$ 25,00"
+                }
+            ],
+            "Terca-feira": [
+                {
+                    "opcao": "Opção 1",
+                    "prato": "Bobó de Galinha",
+                    "acompanhamentos": "Batata Palha, Arroz, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 2",
+                    "prato": "Carne de Panela",
+                    "acompanhamentos": "Batata e Cenoura, Penne c/ Bacon, Arroz e Feijão, Farofa da Casa, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 3",
+                    "prato": "Bife à Cavalo",
+                    "acompanhamentos": "Batata Chips, Arroz e Feijão, Farofa da Casa, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 4",
+                    "prato": "Tilápia",
+                    "acompanhamentos": "Batata Chips, Arroz e Feijão, Salada do Dia."
+                },
+                {
+                    "info_extra": "Buffet Livre: R$ 30,00 | Prato-Feito: R$ 25,00"
+                }
+            ],
+            "Quarta-feira": [
+                {
+                    "opcao": "Opção 1",
+                    "prato": "Feijoada Completa",
+                    "acompanhamentos": "Couve Refogada, Arroz, Laranja e Farofa da Casa, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 2",
+                    "prato": "Almôndegas ao Molho Sugo",
+                    "acompanhamentos": "Espaguete Alho e Óleo, Arroz e Feijão, Farofa da Casa, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 3",
+                    "prato": "Bife à Cavalo",
+                    "acompanhamentos": "Batata Chips, Arroz e Feijão, Farofa da Casa, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 4",
+                    "prato": "Tilápia",
+                    "acompanhamentos": "Batata Chips, Arroz e Feijão, Salada do Dia."
+                },
+                {
+                    "info_extra": "Buffet Livre: R$ 25,00 | Prato-Feito: R$ 25,00"
+                }
+            ],
+            "Quinta-feira": [
+                {
+                    "opcao": "Opção 1",
+                    "prato": "Arroz Carreteiro",
+                    "acompanhamentos": "Ovo Frito e Mandioca, Feijão c/ Bacon, Farofa da Casa, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 2",
+                    "prato": "Filé de Frango à Milanesa",
+                    "acompanhamentos": "Macarrão Alho e Óleo, Arroz e Feijão c/ Bacon, Creme de Milho, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 3",
+                    "prato": "Bife á Cavalo",
+                    "acompanhamentos": "Batata Chips, Arroz e Feijão c/ Bacon, Farofa da Casa, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 4",
+                    "prato": "Tilápia",
+                    "acompanhamentos": "Batata Chips, Arroz e Feijão c/ Bacon, Salada do Dia."
+                },
+                {
+                    "info_extra": "Buffet Livre: R$ 30,00 | Prato-Feito: R$ 25,00"
+                }
+            ],
+            "Sexta-feira": [
+                {
+                    "opcao": "Opção 1",
+                    "prato": "Carne e Linguiça Assada",
+                    "acompanhamentos": "Mandioca, Arroz e Feijão, Farofa da Casa, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 2",
+                    "prato": "Frango Xadrez",
+                    "acompanhamentos": "Espaguete a Moda da Casa, Arroz e Feijão, Pastelzinho, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 3",
+                    "prato": "Bife à Cavalo",
+                    "acompanhamentos": "Batata Chips, Arroz e Feijão, Farofa da Casa, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 4",
+                    "prato": "Tilápia",
+                    "acompanhamentos": "Batata Chips, Arroz e Feijão, Salada do Dia."
+                },
+                {
+                    "info_extra": "Buffet Livre: R$ 30,00 | Prato-Feito: R$ 25,00"
+                }
+            ],
+            "Sabado": [
+                {
+                    "opcao": "Opção 1",
+                    "prato": "Feijoada Completa",
+                    "acompanhamentos": "Couve Refogada, Arroz, Laranja e Farofa da Casa, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 2",
+                    "prato": "Frango Assado",
+                    "acompanhamentos": "Macarrão Alho e Óleo, Arroz e Feijão, Batata Rústica, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 3",
+                    "prato": "Bife à Cavalo",
+                    "acompanhamentos": "Batata Chips, Arroz e Feijão, Farofa da Casa, Salada do Dia."
+                },
+                {
+                    "opcao": "Opção 4",
+                    "prato": "Tilápia à Parmegiana",
+                    "acompanhamentos": "Batata Chips, Arroz e Feijão, Salada do Dia."
+                },
+                {
+                    "info_extra": "Buffet Livre: R$ 32,00 | Prato-Feito: R$ 27,00"
+                }
+            ]
+        },
+        "Combos": [
+            {
+                "nome": "Combo 2 Marmitex Mini - (Cardápio do Dia)",
+                "descricao": "Arroz, Feijoada Completa, Couve Refogada, Laranja, Farofa da Casa e Salada do Dia.",
+                "preco": "A partir de R$ 30,00"
+            },
+            {
+                "nome": "Combo 2 Marmitex Média - (Cardápio do Dia)",
+                "descricao": "Arroz, Feijoada Completa, Couve Refogada, Laranja, Farofa da Casa e Salada do Dia.",
+                "preco": "A partir de R$ 36,00"
+            },
+            {
+                "nome": "Combo 2 Marmitex Grande - (Cardápio do Dia)",
+                "descricao": "Arroz, Feijoada Completa, Couve Refogada, Laranja, Farofa da Casa e Salada do Dia.",
+                "preco": "A partir de R$ 40,00"
+            }
+        ],
+        "Bebidas": [
+            {
+                "nome": "Água Sem Gás 500ml",
+                "preco": "R$ 4,00"
+            },
+            {
+                "nome": "Água Com Gás 500ml",
+                "preco": "R$ 4,00"
+            },
+            {
+                "nome": "Sprite Lemon Fresh 510ml",
+                "preco": "R$ 6,00"
+            },
+            {
+                "nome": "Schweppes Tônica 350ml",
+                "preco": "R$ 5,00"
+            },
+            {
+                "nome": "Schweppes Citrus 350ml",
+                "preco": "R$ 5,00"
+            },
+            {
+                "nome": "Sprite 350ml",
+                "preco": "R$ 5,00"
+            },
+            {
+                "nome": "Fanta Laranja 350ml",
+                "preco": "R$ 5,00"
+            },
+            {
+                "nome": "Kuat 350ml",
+                "preco": "R$ 5,00"
+            },
+            {
+                "nome": "Coca-Cola Original 220ml (Mini)",
+                "preco": "R$ 3,50"
+            },
+            {
+                "nome": "Coca-Cola Zero 310ml",
+                "preco": "R$ 5,00"
+            },
+            {
+                "nome": "Coca-Cola Original 310ml",
+                "preco": "R$ 5,00"
+            },
+            {
+                "nome": "Fanta Guaraná 350ml",
+                "preco": "R$ 5,00"
+            },
+            {
+                "nome": "Coca-Cola Zero 600ml",
+                "preco": "R$ 7,00"
+            },
+            {
+                "nome": "Coca-Cola 2L",
+                "preco": "R$ 13,50"
+            },
+            {
+                "nome": "Coca-Cola Zero 2L",
+                "preco": "R$ 13,50"
+            },
+            {
+                "nome": "Fanta Laranja Mini 220ml",
+                "preco": "R$ 3,50"
+            },
+            {
+                "nome": "Suco Dell Valle 290ml - Uva",
+                "preco": "R$ 5,00"
+            },
+            {
+                "nome": "Suco Dell Valle 290ml - Pêssego",
+                "preco": "R$ 5,00"
+            },
+            {
+                "nome": "Del Valle Kapo 200ml - Maracujá",
+                "preco": "R$ 4,00"
+            },
+            {
+                "nome": "Del Valle Kapo 200ml - Morango",
+                "preco": "R$ 4,00"
+            },
+            {
+                "nome": "Suco de Laranja Natural 500ml",
+                "preco": "R$ 14,90"
+            },
+            {
+                "nome": "Suco Dell Valle 290ml - Goiaba",
+                "preco": "R$ 5,00"
+            },
+            {
+                "nome": "Suco de Laranja Natural 200ml",
+                "preco": "R$ 10,90"
+            },
+            {
+                "nome": "Garrafa de Limonada 200ml",
+                "preco": "R$ 7,00"
+            },
+            {
+                "nome": "Garrafa de Limonada 500ml",
+                "preco": "R$ 12,00"
+            }
+        ],
+        "Cervejas": [
+            {
+                "nome": "Heineken Long Neck 330ml",
+                "preco": "R$ 10,00"
+            },
+            {
+                "nome": "Heineken Long Neck Zero 330ml",
+                "preco": "R$ 10,00"
+            },
+            {
+                "nome": "Eisenbahn Pilsen Long Neck 355ml",
+                "preco": "R$ 8,00"
+            }
+        ],
+        "Sobremesas": [
+            {
+                "nome": "Brigadeiro - 4un",
+                "descricao": "4 unidades de brigadeiro deliciosos",
+                "preco": "R$ 10,00"
+            },
+            {
+                "nome": "Bala Baiana",
+                "descricao": "Deliciosa bala baiana",
+                "preco": "R$ 4,00"
+            },
+            {
+                "nome": "Doce de Leite",
+                "preco": "R$ 3,50"
+            },
+            {
+                "nome": "Halls",
+                "preco": "R$ 3,00"
+            },
+            {
+                "nome": "Trident",
+                "preco": "R$ 4,00"
+            }
+        ],
+        "Porções de Acompanhamento": [
+            {
+                "nome": "Salada da Casa",
+                "descricao": "Marmitex pequeno com variedade de saladas.",
+                "preco": "R$ 12,00"
+            },
+            {
+                "nome": "Porção pequena de arroz",
+                "preco": "R$ 15,00"
+            },
+            {
+                "nome": "Porção Média de Arroz Branco",
+                "descricao": "Deliciosa Porção de Arroz Quentinho.",
+                "preco": "R$ 18,00"
+            },
+            {
+                "nome": "Porção Grande de Arroz Branco",
+                "descricao": "Deliciosa Porção de Arroz Quentinho.",
+                "preco": "R$ 20,00"
+            },
+            {
+                "nome": "Porção pequena de feijão",
+                "preco": "R$ 15,00"
+            },
+            {
+                "nome": "Porção Média de Feijão",
+                "descricao": "Deliciosa Porção de Feijão Quentinho.",
+                "preco": "R$ 18,00"
+            },
+            {
+                "nome": "Porção Grande de Feijão",
+                "descricao": "Deliciosa Porção de Feijão Quentinho.",
+                "preco": "R$ 20,00"
+            },
+            {
+                "nome": "Ovo Frito 1un",
+                "descricao": "Delicioso Ovo Frito.",
+                "preco": "R$ 2,90"
+            },
+            {
+                "nome": "Omelete de Queijo",
+                "preco": "R$ 8,00"
+            }
+        ]
+    }
+}

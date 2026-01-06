@@ -1,0 +1,293 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp"
+      },
+      "id": "webhook-node",
+      "name": "Webhook (WhatsApp)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.all()[0].json.body;\nconst days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];\nconst now = new Date();\nnow.setHours(now.getHours() - 4);\n\nconst msgData = body.data;\nconst remoteJid = msgData.key.remoteJid;\nconst isGroup = remoteJid.includes('@g.us');\n\nif (isGroup) { throw new Error('Ignorar Grupos'); }\n\nreturn {\n  day_of_week: days[now.getDay()],\n  hour: now.getHours(),\n  phone: remoteJid.replace('@s.whatsapp.net', ''),\n  pushName: msgData.pushName,\n  messageType: msgData.messageType,\n  textMessage: msgData.message?.conversation || msgData.message?.extendedTextMessage?.text\n};"
+      },
+      "id": "context-node",
+      "name": "Definir Contexto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT c.name, w.balance FROM clients c LEFT JOIN wallets w ON c.id = w.client_id WHERE c.phone = $1 OR c.phone = '+' || $1 LIMIT 1;",
+        "additionalFields": {
+          "queryParams": "={{ $json.phone }}"
+        }
+      },
+      "id": "postgres-client-node",
+      "name": "Buscar Cliente VIP",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [440, 0],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_ID"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ws.option_number, p.name as product_name, p.description, (SELECT json_agg(json_build_object('size', pv.variant_name, 'price', pv.price)) FROM product_variants pv WHERE pv.product_id = p.id) as variants FROM weekly_schedule ws JOIN products p ON ws.product_id = p.id WHERE ws.day_of_week = $1 ORDER BY ws.option_number ASC;",
+        "additionalFields": {
+          "queryParams": "={{ $('Definir Contexto').item.json.day_of_week }}"
+        }
+      },
+      "id": "postgres-menu-node",
+      "name": "Buscar Menu do Dia",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [660, 0],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_ID"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.name FROM products p JOIN categories c ON p.category_id = c.id WHERE c.name IN ('Bebidas', 'Sobremesas') LIMIT 10;"
+      },
+      "id": "postgres-extras-node",
+      "name": "Buscar Bebidas/Sobremesas",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [880, 0],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_ID"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "json",
+        "jsonOutput": "={\n  \"menu\": {{ JSON.stringify($('Buscar Menu do Dia').all().map(i=>i.json)) }},\n  \"extras\": {{ JSON.stringify($('Buscar Bebidas/Sobremesas').all().map(i=>i.json)) }},\n  \"client\": {{ JSON.stringify($('Buscar Cliente VIP').item.json) }}\n}"
+      },
+      "id": "aggregate-node",
+      "name": "Agrupar Dados",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [1100, 0]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "field": "={{ $('Definir Contexto').item.json.messageType }}",
+              "operation": "equals",
+              "value": "audioMessage"
+            }
+          ]
+        }
+      },
+      "id": "switch-node",
+      "name": "É Áudio?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [1320, 0]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "binaryData": true,
+        "binaryPropertyName": "data"
+      },
+      "id": "whisper-node",
+      "name": "Ouvir Áudio (Whisper)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [1540, -100],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_ID"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "=Você é a ANA, a IA do Restaurante Morumbi.\nHoje é {{ $('Definir Contexto').item.json.day_of_week }}.\nO cliente chama: {{ $('Agrupar Dados').item.json.client.name || 'Amigo(a)' }}.\nSaldo em conta: R$ {{ $('Agrupar Dados').item.json.client.balance || '0.00' }}.\n\nCardápio de hoje:\n{{ $('Agrupar Dados').item.json.menu.map(i => i.product_name + ' (R$ ' + i.variants[0].price + ')').join(', ') }}\n\nExtras:\n{{ $('Agrupar Dados').item.json.extras.map(i => i.name).join(', ') }}\n\nRegras:\n1. Se o saldo for > 0, avise sobre o saldo.\n2. Se for Áudio, seja mais breve.\n3. O cliente disse: \"{{ $json.text }}\""
+            }
+          ]
+        }
+      },
+      "id": "openai-chat-node",
+      "name": "Cérebro Ana (GPT-4o)",
+      "type": "@n8n/n8n-nodes-langchain.openAiChatModel",
+      "typeVersion": 1,
+      "position": [1800, 0],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_ID"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://hexai_evolution_api:8080/message/sendText/Hexai",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "headerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "hexai_evolution_global_key_123"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $('Definir Contexto').item.json.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.content || $json.text }}"
+            }
+          ]
+        }
+      },
+      "id": "send-reply-node",
+      "name": "Enviar Resposta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2020, 0]
+    }
+  ],
+  "connections": {
+    "Webhook (WhatsApp)": {
+      "main": [
+        [
+          {
+            "node": "Definir Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Definir Contexto": {
+      "main": [
+        [
+          {
+            "node": "Buscar Cliente VIP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Cliente VIP": {
+      "main": [
+        [
+          {
+            "node": "Buscar Menu do Dia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Menu do Dia": {
+      "main": [
+        [
+          {
+            "node": "Buscar Bebidas/Sobremesas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Bebidas/Sobremesas": {
+      "main": [
+        [
+          {
+            "node": "Agrupar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrupar Dados": {
+      "main": [
+        [
+          {
+            "node": "É Áudio?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É Áudio?": {
+      "main": [
+        [
+          {
+            "node": "Ouvir Áudio (Whisper)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cérebro Ana (GPT-4o)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ouvir Áudio (Whisper)": {
+      "main": [
+        [
+          {
+            "node": "Cérebro Ana (GPT-4o)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cérebro Ana (GPT-4o)": {
+      "main": [
+        [
+          {
+            "node": "Enviar Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

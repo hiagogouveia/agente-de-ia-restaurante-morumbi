@@ -1,0 +1,366 @@
+{
+    "name": "Agente Ana V3.1 (Audio + JSON Menu + Full Week + Off-Hours + Strict Menu + Date Fix V3 + Tone Fix)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "whatsapp",
+                "options": {}
+            },
+            "id": "e945cd56-a8d2-4d77-8bde-67772ce37632",
+            "name": "Webhook (WhatsApp)",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                -160,
+                144
+            ],
+            "webhookId": "b286e26c-9fa8-4af0-a5da-b45074ef4fe4"
+        },
+        {
+            "parameters": {
+                "jsCode": "const body = $input.all()[0].json.body;\nconst days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];\nconst now = new Date();\n// Ajuste para Fuso Horário BR (-4)\nnow.setHours(now.getHours() - 4);\nconst msgData = body.data;\nconst remoteJid = msgData.key.remoteJid;\nconst isGroup = remoteJid.includes('@g.us');\nif (isGroup) { throw new Error('Ignorar Grupos'); }\n// Detecta se é áudio ou texto\nconst messageType = msgData.messageType;\nconst textMessage = msgData.message?.conversation || msgData.message?.extendedTextMessage?.text || \"\";\nreturn {\n  day_of_week: days[now.getDay()],\n  hour: now.getHours(),\n  phone: remoteJid.replace('@s.whatsapp.net', ''),\n  pushName: msgData.pushName,\n  messageType: messageType, // Importante para o Switch\n  text: textMessage\n};"
+            },
+            "id": "0ed61b07-217b-46ee-a023-9aa50359d3b4",
+            "name": "Filtro e Contexto",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -16,
+                -80
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://hexai_evolution_api:8080/message/sendText/Hexai",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "headerAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "hexai_evolution_global_key_123"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "number",
+                            "value": "={{ $('Filtro e Contexto').item.json.phone }}"
+                        },
+                        {
+                            "name": "text",
+                            "value": "={{ $json.content || $json.text }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "1f3c221e-a7bf-48ca-91c2-816c5c566e94",
+            "name": "Enviar Resposta",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                2200,
+                -80
+            ]
+        },
+        {
+            "parameters": {},
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                -208,
+                -80
+            ],
+            "id": "bb750353-47e7-4606-a84a-113a60b22a55",
+            "name": "When clicking ‘Execute workflow’"
+        },
+        {
+            "parameters": {
+                "rules": {
+                    "values": [
+                        {
+                            "conditions": {
+                                "options": {
+                                    "caseSensitive": true,
+                                    "leftValue": "",
+                                    "typeValidation": "strict",
+                                    "version": 3
+                                },
+                                "conditions": [
+                                    {
+                                        "leftValue": "={{ $json.messageType }}",
+                                        "rightValue": "audioMessage",
+                                        "operator": {
+                                            "type": "string",
+                                            "operation": "equals"
+                                        },
+                                        "id": "1edcf8da-f90e-4ec6-9d2d-8b4c785ee4aa"
+                                    }
+                                ],
+                                "combinator": "and"
+                            }
+                        },
+                        {
+                            "conditions": {
+                                "options": {
+                                    "caseSensitive": true,
+                                    "leftValue": "",
+                                    "typeValidation": "strict",
+                                    "version": 3
+                                },
+                                "conditions": [
+                                    {
+                                        "id": "7698f986-974c-4b9f-b2a3-6719ab92023e",
+                                        "leftValue": "",
+                                        "rightValue": "audioMessage",
+                                        "operator": {
+                                            "type": "string",
+                                            "operation": "notEquals"
+                                        }
+                                    }
+                                ],
+                                "combinator": "and"
+                            }
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.switch",
+            "typeVersion": 3.4,
+            "position": [
+                176,
+                -80
+            ],
+            "id": "8145a54b-08f0-4401-8391-f919b0e3c909",
+            "name": "Switch"
+        },
+        {
+            "parameters": {
+                "resource": "audio",
+                "operation": "transcribe",
+                "options": {
+                    "language": "pt"
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.openAi",
+            "typeVersion": 2.1,
+            "position": [
+                480,
+                -288
+            ],
+            "id": "ad0ec215-28da-4356-8842-da31ee23f18a",
+            "name": "Transcribe a recording",
+            "credentials": {
+                "openAiApi": {
+                    "id": "eeBvQeAueyMsEFIr",
+                    "name": "OpenAi account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "url": "={{ $('Webhook (WhatsApp)').item.json.body.data.message.audioMessage.url }}",
+                "options": {
+                    "response": {
+                        "response": {
+                            "responseFormat": "file"
+                        }
+                    }
+                }
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.3,
+            "position": [
+                320,
+                -288
+            ],
+            "id": "9fb325cd-8226-4479-a026-b3dc377499bd",
+            "name": "HTTP Request"
+        },
+        {
+            "parameters": {},
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 3.2,
+            "position": [
+                640,
+                -64
+            ],
+            "id": "9c6dd03b-65a5-493d-8d01-117e17c1909b",
+            "name": "Merge"
+        },
+        {
+            "parameters": {
+                "jsCode": "const menuData = {\n    \"cardapio\": {\n        \"Marmitex do Dia\": [\n            {\n                \"nome\": \"Feijoada Completa\",\n                \"descricao\": \"Arroz, Feijoada Completa, Couve Refogada, Laranja, Farofa da Casa e Salada do Dia.\",\n                \"precos\": {\n                    \"Mini\": \"R$ 17,00\",\n                    \"Média\": \"R$ 20,00\",\n                    \"Grande\": \"R$ 22,00\",\n                    \"Executiva\": \"R$ 25,00\"\n                }\n            },\n            {\n                \"nome\": \"Frango Assado\",\n                \"descricao\": \"Arroz, Feijão, Frango Assado, Espaguete Alho e Óleo, Batata Rústica e Salada do Dia.\",\n                \"precos\": {\n                    \"Mini\": \"R$ 17,00\",\n                    \"Média\": \"R$ 20,00\",\n                    \"Grande\": \"R$ 22,00\",\n                    \"Executiva\": \"R$ 25,00\"\n                }\n            },\n            {\n                \"nome\": \"Bife à Cavalo\",\n                \"descricao\": \"Arroz, Feijão c/ Bacon, Bife á Cavalo, Farofa da Casa, Batata Chips e Salada do Dia\",\n                \"precos\": {\n                    \"Mini\": \"R$ 18,90\",\n                    \"Média\": \"R$ 21,90\",\n                    \"Grande\": \"R$ 23,90\",\n                    \"Executiva\": \"R$ 26,90\"\n                }\n            },\n            {\n                \"nome\": \"Tilápia\",\n                \"descricao\": \"Arroz, Feijão c/ Bacon, Tilápia, Batata Chips e Salada do Dia\",\n                \"precos\": {\n                    \"Mini\": \"R$ 19,90\",\n                    \"Média\": \"R$ 22,90\",\n                    \"Grande\": \"R$ 24,90\",\n                    \"Executiva\": \"R$ 27,90\"\n                }\n            },\n            {\n                \"nome\": \"Marmitex C/ Ovos Fritos\",\n                \"descricao\": \"Arroz, Feijão, 2 Ovos Fritos, Legumes e Salada. (Tamanho Média)\",\n                \"preco\": \"R$ 19,00\"\n            },\n            {\n                \"nome\": \"Marmitex de Omelete de Queijo\",\n                \"descricao\": \"Arroz, Feijão, Omelete de Queijo, Legumes e Salada.\",\n                \"preco_base\": \"A partir de R$ 22,00\"\n            }\n        ],\n        \"CardapioSemanal\": {\n            \"Segunda-feira\": [\n                {\n                    \"opcao\": \"Opção 1\",\n                    \"prato\": \"Frango Assado\",\n                    \"acompanhamentos\": \"Espaguete Alho e Óleo, Arroz e Feijão, Purê de Batata, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 2\",\n                    \"prato\": \"Lasanha à Bolonhesa\",\n                    \"acompanhamentos\": \"Legumes Refogados, Arroz e Feijão, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 3\",\n                    \"prato\": \"Bife à Cavalo\",\n                    \"acompanhamentos\": \"Batata Chips, Arroz e Feijão, Farofa da Casa, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 4\",\n                    \"prato\": \"Tilápia\",\n                    \"acompanhamentos\": \"Batata Chips, Arroz e Feijão, Salada do Dia.\"\n                },\n                {\n                    \"info_extra\": \"Buffet Livre: R$ 30,00 | Prato-Feito: R$ 25,00\"\n                }\n            ],\n            \"Terca-feira\": [\n                {\n                    \"opcao\": \"Opção 1\",\n                    \"prato\": \"Bobó de Galinha\",\n                    \"acompanhamentos\": \"Batata Palha, Arroz, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 2\",\n                    \"prato\": \"Carne de Panela\",\n                    \"acompanhamentos\": \"Batata e Cenoura, Penne c/ Bacon, Arroz e Feijão, Farofa da Casa, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 3\",\n                    \"prato\": \"Bife à Cavalo\",\n                    \"acompanhamentos\": \"Batata Chips, Arroz e Feijão, Farofa da Casa, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 4\",\n                    \"prato\": \"Tilápia\",\n                    \"acompanhamentos\": \"Batata Chips, Arroz e Feijão, Salada do Dia.\"\n                },\n                {\n                    \"info_extra\": \"Buffet Livre: R$ 30,00 | Prato-Feito: R$ 25,00\"\n                }\n            ],\n            \"Quarta-feira\": [\n                {\n                    \"opcao\": \"Opção 1\",\n                    \"prato\": \"Feijoada Completa\",\n                    \"acompanhamentos\": \"Couve Refogada, Arroz, Laranja e Farofa da Casa, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 2\",\n                    \"prato\": \"Almôndegas ao Molho Sugo\",\n                    \"acompanhamentos\": \"Espaguete Alho e Óleo, Arroz e Feijão, Farofa da Casa, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 3\",\n                    \"prato\": \"Bife à Cavalo\",\n                    \"acompanhamentos\": \"Batata Chips, Arroz e Feijão, Farofa da Casa, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 4\",\n                    \"prato\": \"Tilápia\",\n                    \"acompanhamentos\": \"Batata Chips, Arroz e Feijão, Salada do Dia.\"\n                },\n                {\n                    \"info_extra\": \"Buffet Livre: R$ 25,00 | Prato-Feito: R$ 25,00\"\n                }\n            ],\n            \"Quinta-feira\": [\n                {\n                    \"opcao\": \"Opção 1\",\n                    \"prato\": \"Arroz Carreteiro\",\n                    \"acompanhamentos\": \"Ovo Frito e Mandioca, Feijão c/ Bacon, Farofa da Casa, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 2\",\n                    \"prato\": \"Filé de Frango à Milanesa\",\n                    \"acompanhamentos\": \"Macarrão Alho e Óleo, Arroz e Feijão c/ Bacon, Creme de Milho, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 3\",\n                    \"prato\": \"Bife á Cavalo\",\n                    \"acompanhamentos\": \"Batata Chips, Arroz e Feijão c/ Bacon, Farofa da Casa, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 4\",\n                    \"prato\": \"Tilápia\",\n                    \"acompanhamentos\": \"Batata Chips, Arroz e Feijão c/ Bacon, Salada do Dia.\"\n                },\n                {\n                    \"info_extra\": \"Buffet Livre: R$ 30,00 | Prato-Feito: R$ 25,00\"\n                }\n            ],\n            \"Sexta-feira\": [\n                {\n                    \"opcao\": \"Opção 1\",\n                    \"prato\": \"Carne e Linguiça Assada\",\n                    \"acompanhamentos\": \"Mandioca, Arroz e Feijão, Farofa da Casa, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 2\",\n                    \"prato\": \"Frango Xadrez\",\n                    \"acompanhamentos\": \"Espaguete a Moda da Casa, Arroz e Feijão, Pastelzinho, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 3\",\n                    \"prato\": \"Bife à Cavalo\",\n                    \"acompanhamentos\": \"Batata Chips, Arroz e Feijão, Farofa da Casa, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 4\",\n                    \"prato\": \"Tilápia\",\n                    \"acompanhamentos\": \"Batata Chips, Arroz e Feijão, Salada do Dia.\"\n                },\n                {\n                    \"info_extra\": \"Buffet Livre: R$ 30,00 | Prato-Feito: R$ 25,00\"\n                }\n            ],\n            \"Sabado\": [\n                {\n                    \"opcao\": \"Opção 1\",\n                    \"prato\": \"Feijoada Completa\",\n                    \"acompanhamentos\": \"Couve Refogada, Arroz, Laranja e Farofa da Casa, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 2\",\n                    \"prato\": \"Frango Assado\",\n                    \"acompanhamentos\": \"Macarrão Alho e Óleo, Arroz e Feijão, Batata Rústica, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 3\",\n                    \"prato\": \"Bife à Cavalo\",\n                    \"acompanhamentos\": \"Batata Chips, Arroz e Feijão, Farofa da Casa, Salada do Dia.\"\n                },\n                {\n                    \"opcao\": \"Opção 4\",\n                    \"prato\": \"Tilápia à Parmegiana\",\n                    \"acompanhamentos\": \"Batata Chips, Arroz e Feijão, Salada do Dia.\"\n                },\n                {\n                    \"info_extra\": \"Buffet Livre: R$ 32,00 | Prato-Feito: R$ 27,00\"\n                }\n            ]\n        },\n        \"Bebidas\": [\n            { \"nome\": \"Água Sem Gás 500ml\", \"preco\": \"R$ 4,00\" },\n            { \"nome\": \"Água Com Gás 500ml\", \"preco\": \"R$ 4,00\" },\n            { \"nome\": \"Coca-Cola Original 310ml\", \"preco\": \"R$ 5,00\" },\n            { \"nome\": \"Coca-Cola Zero 310ml\", \"preco\": \"R$ 5,00\" },\n            { \"nome\": \"Coca-Cola 2L\", \"preco\": \"R$ 13,50\" },\n            { \"nome\": \"Suco de Laranja Natural 500ml\", \"preco\": \"R$ 14,90\" }\n        ],\n        \"Sobremesas\": [\n            { \"nome\": \"Brigadeiro - 4un\", \"preco\": \"R$ 10,00\" },\n            { \"nome\": \"Bala Baiana\", \"preco\": \"R$ 4,00\" },\n            { \"nome\": \"Doce de Leite\", \"preco\": \"R$ 3,50\" }\n        ]\n    }\n};\n\nconst days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];\nconst ptDays = {\n    'Monday': 'Segunda-feira',\n    'Tuesday': 'Terca-feira',\n    'Wednesday': 'Quarta-feira',\n    'Thursday': 'Quinta-feira',\n    'Friday': 'Sexta-feira',\n    'Saturday': 'Sabado',\n    'Sunday': 'Segunda-feira' // Fallback for Sunday\n};\n\n// Determine TODAY and TOMORROW manually to force the LLM to get it right\nconst now = new Date();\nnow.setHours(now.getHours() - 4); // Adjust for BRT-ish (mock)\n\nconst todayIndex = now.getDay();\nconst todayName = days[todayIndex];\nconst today_pt = ptDays[todayName];\n\n// Date Formatting (DD/MM/YYYY)\nconst formattedDateToday = now.toLocaleDateString('pt-BR');\n\n// Calculate Tomorrow\nconst tomorrowDate = new Date(now);\ntomorrowDate.setDate(now.getDate() + 1);\nconst tomorrowIndex = tomorrowDate.getDay();\nconst tomorrowName = days[tomorrowIndex];\nconst tomorrow_pt = ptDays[tomorrowName];\nconst formattedDateTomorrow = tomorrowDate.toLocaleDateString('pt-BR');\n\n// Calculate Time\nconst hours = now.getHours().toString().padStart(2, '0');\nconst minutes = now.getMinutes().toString().padStart(2, '0');\nconst currentTime = `${hours}:${minutes}`;\n\n// Get user message\nconst mergeNode = $input.all()[0] ? $input.all()[0].json : {};\nconst userText = mergeNode.text || mergeNode.textMessage || \"\";\nconst contextNode = $('Filtro e Contexto').first().json;\n\n// Helper to build menu string\nfunction buildMenuString(key) {\n    let str = \"\";\n    if (menuData.cardapio.CardapioSemanal[key]) {\n        // str += `Cardápio de ${key}:\\n`; // header removed to be cleaner in prompt\n        menuData.cardapio.CardapioSemanal[key].forEach(item => {\n            if (item.opcao) {\n                str += `- ${item.opcao}: ${item.prato} (Acomp: ${item.acompanhamentos})\\n`;\n            }\n        });\n        if (menuData.cardapio.CardapioSemanal[key].length > 0) {\n             const info = menuData.cardapio.CardapioSemanal[key].find(i => i.info_extra);\n             if (info) str += `\\n${info.info_extra}`;\n        }\n    } else {\n        str = `Não há cardápio específico para ${key}.`;\n    }\n    return str;\n}\n\n// Build Shortcut Menus\nconst menuToday = buildMenuString(today_pt);\nconst menuTomorrow = buildMenuString(tomorrow_pt);\n\n// Build FULL Weekly Context\nlet fullMenuContext = \"\";\nconst orderedDays = ['Segunda-feira', 'Terca-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sabado'];\n\norderedDays.forEach(dayName => {\n    fullMenuContext += `--- ${dayName} ---\\n` + buildMenuString(dayName) + \"\\n\\n\";\n});\n\n// Build Extras/Bebidas Context\nlet bebidasContext = \"Bebidas:\\n\";\nmenuData.cardapio.Bebidas.forEach(b => {\n    bebidasContext += `- ${b.nome}: ${b.preco}\\n`;\n});\nbebidasContext += \"\\nSobremesas:\\n\";\nmenuData.cardapio.Sobremesas.forEach(s => {\n    bebidasContext += `- ${s.nome}: ${s.preco}\\n`;\n});\n\n// Build Cliente Context\nlet clienteContext = \"Dados do Cliente:\\n\";\nif (contextNode.pushName) {\n    clienteContext += `Nome: ${contextNode.pushName}\\n`;\n} else {\n    clienteContext += \"Cliente Novo (sem cadastro VIP identified)\";\n}\n\nreturn {\n    fullMenuContext,\n    menuToday,\n    menuTomorrow,\n    bebidasContext,\n    clienteContext,\n    mensagemUsuario: userText,\n    today_pt,\n    tomorrow_pt,\n    currentTime,\n    formattedDateToday,\n    formattedDateTomorrow\n};"
+            },
+            "id": "prepare-context-json",
+            "name": "Preparar Contexto",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1380,
+                -80
+            ]
+        },
+        {
+            "parameters": {
+                "modelId": {
+                    "__rl": true,
+                    "value": "llama-3.1-8b-instant",
+                    "mode": "list",
+                    "cachedResultName": "LLAMA-3.1-8B-INSTANT"
+                },
+                "responses": {
+                    "values": [
+                        {
+                            "role": "assistant",
+                            "content": "=Você é a ANA, tem 22 anos, atendente do WhatsApp do Restaurante Morumbi.\n\nVocê se comporta como uma menina de 22 anos, simpática, educada e profissional, que trabalha no atendimento do Morumbi Restaurante & Delivery.\nVocê fala como uma pessoa real, nunca como robô.\nNunca diga que é uma IA, bot, assistente virtual ou sistema.\n\n--- AMBIENTE ---\nDia de Hoje: {{ $json.today_pt }} ({{ $json.formattedDateToday }})\nDia de Amanhã: {{ $json.tomorrow_pt }} ({{ $json.formattedDateTomorrow }})\nHorário Atual: {{ $json.currentTime }}\n\nHorário oficial de funcionamento:\nSegunda a Sábado — 10h30 às 14h\n\n=== ATALHOS RÁPIDOS (USE ISSO) ===\n> CARDÁPIO DE HOJE ({{ $json.today_pt }}):\n{{ $json.menuToday }}\n\n> CARDÁPIO DE AMANHÃ ({{ $json.tomorrow_pt }}):\n{{ $json.menuTomorrow }}\n==================================\n\n--- INSTRUÇÕES DO CARDÁPIO ---\n1. Se o cliente perguntar de AMANHÃ, COPIE O TEXTO ABAIXO DE '> CARDÁPIO DE AMANHÃ'. NÃO MUDE UMA VÍRGULA.\n2. Se o cliente perguntar de HOJE, use '> CARDÁPIO DE HOJE'.\n3. PROIBIDO INVENTAR PRATOS QUE NÃO ESTÃO LISTADOS (Não existe frango com morango, não existe prato vegano se não estiver escrito).\n4. Se o menu estiver vazio ou disser \"Não há cardápio\", avise o cliente.\n5. PRIORIDADE: Mande a lista de pratos em texto PRIMEIRO. O link vem por último.\n\n--- CLIENTE ---\nDados do cliente:\n{{ $json.clienteContext }}\n\n--- CARDÁPIO COMPLETO DA SEMANA (Para outros dias) ---\n{{ $json.fullMenuContext }}\n\n--- EXTRAS E BEBIDAS ---\n{{ $json.bebidasContext }}\n\n--- CONTEXTO DO NEGÓCIO ---\nVocê trabalha no Morumbi Restaurante & Delivery, em Campo Grande – MS, bairro Vila Morumbi.\nDesde 2017 o Morumbi serve comida regional e brasileira de verdade, com qualidade, rapidez e ótimo custo-benefício.\n\nServiços:\n• Marmitex (arroz, feijão, proteína, salada e guarnições)\n• Prato feito (cliente monta o prato no balcão)\n• Buffet livre (comida caseira à vontade)\n\nAtendemos:\n• Clientes individuais\n• Famílias\n• Empresas (marmitas corporativas)\n\nPedidos são feitos pelo nosso cardápio digital:\nhttps://marmitariamorumbi.saipos.com/home\n\nInstagram:\nhttps://www.instagram.com/restaurantemorumbicg/\n\nSite:\nhttps://www.restaurantemorumbicg.com.br/\n\nWhatsApp humano:\n+55 67 99673-3337\n\n--- PERSONALIDADE DA ANA ---\nVocê é:\n• Simpática\n• Prestativa\n• Clara\n• Educada\n• Profissional\n• Rápida no atendimento\n• Direta ao falar de preços (não enrole, apenas responda o valor).\n\nVocê fala como uma atendente real de WhatsApp, com frases naturais, humanas e acolhedoras.\nPode usar emojis de forma leve 😊\n\n--- O QUE A ANA FAZ ---\nVocê:\n• Responde dúvidas\n• Explica o cardápio (SEMPRE VERIFIQUE O DIA QUE O CLIENTE QUER)\n• Direciona para o link de pedidos (MAS NÃO PRECISA COLAR O LINK EM TODA RESPOSTA, só se fizer sentido)\n• Identifica clientes empresariais\n• Encaminha para atendimento humano quando necessário\n\nVocê NÃO:\n• Confirma pedidos\n• Cria preços\n• Promete entregas fora do horário\n• Resolve problemas financeiros ou técnicos complexos\n\n--- ESTÁGIOS DE ATENDIMENTO ---\n\n1) ABORDAGEM INICIAL\nSe o cliente não informou o nome ou o que deseja:\nPergunte de forma natural:\n\"Oi! Tudo bem? 😊 Me conta seu nome e se você quer pedir, ver o cardápio ou tirar uma dúvida.\"\n\n2) ENTENDER A NECESSIDADE\nDescubra se é:\n• Entrega\n• Retirada\n• Almoço no local\nE se é para pessoa física ou empresa.\n\n3) DIRECIONAMENTO PARA PEDIDO\nSe o cliente quiser, envie o link no final:\nhttps://marmitariamorumbi.saipos.com/home\n\n4) EXPLICAÇÃO DOS SERVIÇOS\nExplique de forma simples:\n• Marmitex\n• Prato feito\n• Buffet\n\n5) EMPRESAS (B2B)\nSe o cliente mencionar:\nempresa, funcionários, obra, pedidos diários ou grandes volumes:\nPergunte:\n• Nome da empresa\n• Quantidade média de marmitas por dia\n• Telefone\n\nDepois diga:\n\"Vou passar essas informações pro nosso time comercial entrar em contato com você.\"\n\n6) FORA DO HORÁRIO\nSe for fora das 10h30 às 14h:\n\nREGRA DE OURO: Se o cliente perguntou uma INFORMAÇÃO (Cardápio, Preço, Endereço), RESPONDA A PERGUNTA NORMALMENTE.\n\nExemplo:\n\"O Prato Feito custa R$ 25,00 😊\"\n\nSó se o cliente insistir em pedir AGORA, aí você avisa:\n\"Mas olha, nosso atendimento para pedidos retorna amanhã às 10h30, tá? 😊\"\n\n\n7) ENCERRAMENTO\nQuando o atendimento terminar:\nAgradeça e, quando fizer sentido, envie:\n\nAvaliação no Google:\nhttps://www.google.com/maps/place/Restaurante+e+Delivery+Morumbi/@-20.4976117,-54.5840313,17z/data=!3m1!4b1!4m6!3m5!1s0x9486ef50d1bf8495:0x7bef4b9fab7311d!8m2!3d-20.4976117!4d-54.5840313!16s%2Fg%2F11f6y3jj0c\n\nPesquisa de satisfação:\nhttps://docs.google.com/forms/d/e/1FAIpQLSdqpJ1KIIiPjluwHVaJjBU7r-Fasi43FSiEDEsFqXHOyxdpcw/viewform\n\nQuando possível convide para acessar o nosso site\n\n--- USO DO MENU ---\nO MENU e os EXTRAS estão em formato JSON acima.\nUse sempre:\n• product_name\n• price\n• description\nNunca invente itens ou valores.\n\n--- REGRAS ABSOLUTAS ---\n1. Seja simpática e natural (estilo WhatsApp).\n2. Use o menu JSON para responder pratos e preços.\n3. NÃO mande links se você só está tirando uma dúvida simples (preço, endereço).\n4. Nunca confirme pedidos pelo WhatsApp.\n5. Nunca prometa nada fora do horário.\n6. Nunca saia do personagem ANA.\n\n--- MENSAGEM DO CLIENTE ---\nO cliente disse:\n\"{{ $json.mensagemUsuario }}\"\n"
+                        },
+                        {
+                            "content": "={{ $json.mensagemUsuario }}"
+                        }
+                    ]
+                },
+                "simplify": false,
+                "builtInTools": {},
+                "options": {
+                    "store": false
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.openAi",
+            "typeVersion": 2.1,
+            "position": [
+                1616,
+                -80
+            ],
+            "id": "8691fc41-3b4d-4b57-aedd-a37cc4df57fb",
+            "name": "Groq",
+            "credentials": {
+                "openAiApi": {
+                    "id": "dzxzD6NCYutStGsz",
+                    "name": "OpenAi account 2"
+                }
+            }
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "Webhook (WhatsApp)": {
+            "main": [
+                [
+                    {
+                        "node": "Filtro e Contexto",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Filtro e Contexto": {
+            "main": [
+                [
+                    {
+                        "node": "Switch",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "When clicking ‘Execute workflow’": {
+            "main": [
+                [
+                    {
+                        "node": "Filtro e Contexto",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Transcribe a recording": {
+            "main": [
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "Switch": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP Request",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Merge",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP Request": {
+            "main": [
+                [
+                    {
+                        "node": "Transcribe a recording",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Merge": {
+            "main": [
+                [
+                    {
+                        "node": "Preparar Contexto",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Preparar Contexto": {
+            "main": [
+                [
+                    {
+                        "node": "Groq",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Groq": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar Resposta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "versionId": "merged-v3-1-fix"
+}

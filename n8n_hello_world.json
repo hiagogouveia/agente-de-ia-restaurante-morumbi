@@ -1,0 +1,79 @@
+{
+  "name": "Hexai Hello World Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook (WhatsApp)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ],
+      "webhookId": "whatsapp"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://hexai_evolution_api:8080/message/sendText/Hexai",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "hexai_evolution_global_key_123"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.body.data.key.remoteJid }}"
+            },
+            {
+              "name": "text",
+              "value": "=Olá! Sou o Agente de Teste da Hexai. 🤖\n\nRecebi sua mensagem: *{{ $json.body.data.message.conversation || $json.body.data.message.extendedTextMessage.text }}*"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "reply-node",
+      "name": "Responder via Evolution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        680,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook (WhatsApp)": {
+      "main": [
+        [
+          {
+            "node": "Responder via Evolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v1"
+}

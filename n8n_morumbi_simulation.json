@@ -1,0 +1,232 @@
+{
+    "name": "Simulação - Teste Ana (Sem WhatsApp)",
+    "active": false,
+    "versionId": "simula-test-1234-5678-9999",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "manual-trigger",
+            "name": "Iniciar Teste Manual",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                220,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "body.data.key.remoteJid",
+                            "value": "BR_PHONE_NUMBER_TEST@s.whatsapp.net"
+                        },
+                        {
+                            "name": "body.data.pushName",
+                            "value": "Hiago"
+                        },
+                        {
+                            "name": "body.data.message.conversation",
+                            "value": "O que tem de bom pra comer hoje?"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "mock-data",
+            "name": "Dados Simulados (WhatsApp)",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 2,
+            "position": [
+                440,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];\nconst now = new Date();\nnow.setHours(now.getHours() - 4);\nreturn {\n  day_of_week: days[now.getDay()],\n  hour: now.getHours(),\n  phone: $input.all()[0].json.body.data.key.remoteJid.replace('@s.whatsapp.net', '')\n};"
+            },
+            "id": "get-context",
+            "name": "Definir Data/Hora",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                660,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT c.name, w.balance \nFROM clients c \nLEFT JOIN wallets w ON c.id = w.client_id \nWHERE c.phone = $1 OR c.phone = '+' || $1;",
+                "additionalFields": {
+                    "queryParams": "={{ $json.phone }}"
+                }
+            },
+            "id": "postgres-client",
+            "name": "Buscar Cliente VIP",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                880,
+                150
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "YOUR_POSTGRES_ID"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT ws.option_number, p.name as product_name, p.description, \n(SELECT json_agg(json_build_object('size', pv.variant_name, 'price', pv.price)) \n FROM product_variants pv WHERE pv.product_id = p.id) as variants\nFROM weekly_schedule ws\nJOIN products p ON ws.product_id = p.id\nWHERE ws.day_of_week = $1\nORDER BY ws.option_number ASC;",
+                "additionalFields": {
+                    "queryParams": "={{ $('Definir Data/Hora').item.json.day_of_week }}"
+                }
+            },
+            "id": "postgres-menu",
+            "name": "Buscar Menu do Dia",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                880,
+                350
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "YOUR_POSTGRES_ID"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT p.name, p.base_price, c.name as category\nFROM products p\nJOIN categories c ON p.category_id = c.id\nWHERE c.name IN ('Bebidas', 'Sobremesas')\nLIMIT 6;"
+            },
+            "id": "postgres-extras",
+            "name": "Buscar Bebidas/Sobremesas",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                880,
+                550
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "YOUR_POSTGRES_ID"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "chat",
+                "model": "gpt-4o-mini",
+                "messages": {
+                    "values": [
+                        {
+                            "role": "system",
+                            "content": "=Você é a ANA, a IA do Restaurante Morumbi.\nHoje é {{ $('Definir Data/Hora').item.json.day_of_week }}.\nO cliente chama: {{ $('Buscar Cliente VIP').item.json.name || 'Amigo(a)' }}.\nSaldo em conta: R$ {{ $('Buscar Cliente VIP').item.json.balance || '0.00' }}.\n\nCardápio de hoje:\n{{ $('Buscar Menu do Dia').all().map(i => i.json.product_name + ' (R$ ' + i.json.variants[0].price + ')').join(', ') }}\n\nExtras:\n{{ $('Buscar Bebidas/Sobremesas').all().map(i => i.json.name).join(', ') }}\n\nRegras:\n1. Se o saldo for > 0, avise: \"Vi que você tem R$ X de saldo!\".\n2. Se for ZERO, **NÃO fale de saldo**.\n3. Seja curta, acolhedora e ofereça bebida/sobremesa."
+                        },
+                        {
+                            "role": "user",
+                            "content": "={{ $('Dados Simulados (WhatsApp)').item.json.body.data.message.conversation }}"
+                        }
+                    ]
+                }
+            },
+            "id": "openai-node-sim",
+            "name": "Cérebro Ana (GPT-4o)",
+            "type": "@n8n/n8n-nodes-langchain.openAiChatModel",
+            "typeVersion": 1,
+            "position": [
+                1150,
+                300
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "YOUR_OPENAI_ID"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Iniciar Teste Manual": {
+            "main": [
+                [
+                    {
+                        "node": "Dados Simulados (WhatsApp)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Dados Simulados (WhatsApp)": {
+            "main": [
+                [
+                    {
+                        "node": "Definir Data/Hora",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Definir Data/Hora": {
+            "main": [
+                [
+                    {
+                        "node": "Buscar Cliente VIP",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Buscar Menu do Dia",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Buscar Bebidas/Sobremesas",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Buscar Cliente VIP": {
+            "main": [
+                [
+                    {
+                        "node": "Cérebro Ana (GPT-4o)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Buscar Menu do Dia": {
+            "main": [
+                [
+                    {
+                        "node": "Cérebro Ana (GPT-4o)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Buscar Bebidas/Sobremesas": {
+            "main": [
+                [
+                    {
+                        "node": "Cérebro Ana (GPT-4o)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

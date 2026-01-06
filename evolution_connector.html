@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Hexai WhatsApp Connect</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f4f4f4; padding: 20px; }
+        .box { background: #fff; padding: 20px; border-radius: 8px; max-width: 500px; margin: 0 auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        button { background: #25D366; color: #fff; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; margin: 10px; }
+        button:hover { opacity: 0.9; }
+        #qr { margin: 20px auto; border: 1px dashed #ccc; padding: 10px; min-height: 200px; display: flex; align-items: center; justify-content: center; }
+        img { max-width: 100%; }
+        .log { margin-top: 10px; font-size: 14px; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>📷 Conectar WhatsApp (Ana)</h2>
+        <p>1. Clique em "Gerar QR Code"<br>2. Escaneie com seu celular<br>3. Clique em "Configurar Cérebro"</p>
+        
+        <button onclick="getQR()">Gerar QR Code</button>
+        <div id="qr">Aguardando...</div>
+        <button onclick="setWebhook()" style="background:#0084ff">Configurar Cérebro (Webhook)</button>
+
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        const BASE = 'http://localhost:8080';
+        const HEADERS = { 'apikey': 'hexai_evolution_global_key_123', 'Content-Type': 'application/json' };
+        const INSTANCE = 'Hexai';
+
+        const log = (msg) => document.getElementById('log').innerText = msg;
+
+        async function api(path, method = 'GET', body = null) {
+            try {
+                const res = await fetch(`${BASE}${path}`, { method, headers: HEADERS, body: body ? JSON.stringify(body) : null });
+                return await res.json();
+            } catch (e) { log('Erro: ' + e); return null; }
+        }
+
+        async function getQR() {
+            log('Criando instância...');
+            // Tenta criar (ignora erro se existir)
+            await api('/instance/create', 'POST', { instanceName: INSTANCE, token: 'hexai_token_secure', qrcode: true, integration: 'WHATSAPP-BAILEYS' });
+            
+            log('Buscando QR...');
+            let tries = 0;
+            const i = setInterval(async () => {
+                tries++;
+                const res = await api(`/instance/connect/${INSTANCE}`);
+                if (res && (res.base64 || (res.qrcode && res.qrcode.base64))) {
+                    const code = res.base64 || res.qrcode.base64;
+                    document.getElementById('qr').innerHTML = `<img src="${code}">`;
+                    log('QR Code Recebido! Escaneie agora.');
+                    clearInterval(i);
+                } else if (res && res.instance && res.instance.status === 'open') {
+                    document.getElementById('qr').innerHTML = '✅ <b style="color:green">CONECTADO!</b>';
+                    log('Já está conectado!');
+                    clearInterval(i);
+                } else {
+                    log(`Tentando buscar QR (${tries})...`);
+                }
+            }, 2000);
+        }
+
+        async function setWebhook() {
+            log('Configurando Webhook...');
+            const res = await api(`/webhook/set/${INSTANCE}`, 'POST', {
+                enabled: true,
+                url: 'http://hexai_n8n:5678/webhook/whatsapp',
+                webhookByEvents: true,
+                events: ['MESSAGES_UPSERT']
+            });
+            console.log(res);
+            if (res) log('Webhook Configurado com Sucesso! 🧠');
+        }
+    </script>
+</body>
+</html>

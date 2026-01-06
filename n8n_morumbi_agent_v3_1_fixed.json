@@ -1,0 +1,228 @@
+{
+    "name": "Agente Ana V3.1 (Sequential Fix)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "whatsapp"
+            },
+            "id": "webhook-node",
+            "name": "Webhook (WhatsApp)",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const body = $input.all()[0].json.body;\nif (!body || !body.data) return [];\n\nconst msgData = body.data;\nconst key = msgData.key;\n\n// Filtros de Segurança\nif (key.fromMe) return []; // Ignora mensagens enviadas pelo bot\nif (key.remoteJid.includes('@g.us')) return []; // Ignora grupos\nif (!msgData.message) return []; // Ignora status updates sem mensagem\n\nconst days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];\nconst now = new Date();\nnow.setHours(now.getHours() - 4);\n\nreturn {\n  day_of_week: days[now.getDay()],\n  hour: now.getHours(),\n  phone: key.remoteJid.replace('@s.whatsapp.net', ''),\n  pushName: msgData.pushName,\n  textMessage: msgData.message.conversation || msgData.message.extendedTextMessage?.text || ''\n};"
+            },
+            "id": "filter-context-node",
+            "name": "Filtro e Contexto",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                220,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT c.name, w.balance FROM clients c LEFT JOIN wallets w ON c.id = w.client_id WHERE c.phone = $1 OR c.phone = '+' || $1 LIMIT 1;",
+                "additionalFields": {
+                    "queryParams": "={{ $json.phone }}"
+                }
+            },
+            "id": "postgres-client-node",
+            "name": "Buscar Cliente VIP",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                440,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "YOUR_POSTGRES_ID"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT ws.option_number, p.name as product_name, p.description, (SELECT json_agg(json_build_object('size', pv.variant_name, 'price', pv.price)) FROM product_variants pv WHERE pv.product_id = p.id) as variants FROM weekly_schedule ws JOIN products p ON ws.product_id = p.id WHERE ws.day_of_week = $1 ORDER BY ws.option_number ASC;",
+                "additionalFields": {
+                    "queryParams": "={{ $('Filtro e Contexto').item.json.day_of_week }}"
+                }
+            },
+            "id": "postgres-menu-node",
+            "name": "Buscar Menu do Dia",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                660,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "YOUR_POSTGRES_ID"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT p.name, p.base_price FROM products p JOIN categories c ON p.category_id = c.id WHERE c.name IN ('Bebidas', 'Sobremesas') LIMIT 6;"
+            },
+            "id": "postgres-extras-node",
+            "name": "Buscar Bebidas/Sobremesas",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                880,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "YOUR_POSTGRES_ID"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "chat",
+                "model": "gpt-4o-mini",
+                "messages": {
+                    "values": [
+                        {
+                            "role": "system",
+                            "content": "=Você é a ANA, a IA do Restaurante Morumbi.\n\n--- AMBIENTE ---\nDia: {{ $('Filtro e Contexto').item.json.day_of_week }}\n\n--- CLIENTE ---\nNome: {{ $('Buscar Cliente VIP').item.json.name || 'Amigo(a)' }}\nSaldo: R$ {{ $('Buscar Cliente VIP').item.json.balance || '0.00' }}\n\n--- MENU DE HOJE ---\n{{ $('Buscar Menu do Dia').all().map(i => `Opção ${i.json.option_number}: ${i.json.product_name} (R$ ${i.json.variants[0].price})`).join('\\n') }}\n\n--- EXTRAS ---\n{{ $('Buscar Bebidas/Sobremesas').all().map(i => i.json.name).join(', ') }}\n\n--- REGRAS ---\n1. Seja simpática e breve.\n2. Se o cliente tiver saldo, avise.\n3. O cliente disse: \"{{ $('Filtro e Contexto').item.json.textMessage }}\""
+                        }
+                    ]
+                }
+            },
+            "id": "openai-chat-node",
+            "name": "Cérebro Ana (GPT-4o)",
+            "type": "@n8n/n8n-nodes-langchain.openAiChatModel",
+            "typeVersion": 1,
+            "position": [
+                1100,
+                0
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "YOUR_OPENAI_ID"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://hexai_evolution_api:8080/message/sendText/Hexai",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "headerAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "hexai_evolution_global_key_123"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "number",
+                            "value": "={{ $('Filtro e Contexto').item.json.phone }}"
+                        },
+                        {
+                            "name": "text",
+                            "value": "={{ $json.content || $json.text }}"
+                        }
+                    ]
+                }
+            },
+            "id": "send-reply-node",
+            "name": "Enviar Resposta",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                1320,
+                0
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook (WhatsApp)": {
+            "main": [
+                [
+                    {
+                        "node": "Filtro e Contexto",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Filtro e Contexto": {
+            "main": [
+                [
+                    {
+                        "node": "Buscar Cliente VIP",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Buscar Cliente VIP": {
+            "main": [
+                [
+                    {
+                        "node": "Buscar Menu do Dia",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Buscar Menu do Dia": {
+            "main": [
+                [
+                    {
+                        "node": "Buscar Bebidas/Sobremesas",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Buscar Bebidas/Sobremesas": {
+            "main": [
+                [
+                    {
+                        "node": "Cérebro Ana (GPT-4o)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Cérebro Ana (GPT-4o)": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar Resposta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
