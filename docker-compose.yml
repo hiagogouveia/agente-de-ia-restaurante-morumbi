@@ -70,8 +70,8 @@ services:
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       # Redis
-      - REDIS_ENABLED=false
-      # - REDIS_URI=redis://172.18.0.3:6379/0
+      - REDIS_ENABLED=true
+      - REDIS_URI=redis://hexai_redis:6379/0
       # WebSocket
       - WEBSOCKET_ENABLED=true
     volumes:
