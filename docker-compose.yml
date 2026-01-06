@@ -59,6 +59,9 @@ services:
     restart: always
     ports:
       - "8080:8080"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     environment:
       - SERVER_URL=http://localhost:8080
       - DOCKER_ENV=true

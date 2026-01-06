@@ -29,7 +29,7 @@ async function main() {
         await axios.post(`${API_URL}/instance/create`, {
             "instanceName": INSTANCE_NAME,
             "token": "hexai_token_secure",
-            "qrcode": true,
+            "qrcode": false,
             "integration": "WHATSAPP-BAILEYS"
         }, { headers });
         console.log('✅ Instance created successfully!');
