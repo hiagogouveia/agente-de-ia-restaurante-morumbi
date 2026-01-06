@@ -12,37 +12,52 @@ const headers = {
 };
 
 async function main() {
-    console.log('--- FINAL CONFIGURATION ---');
+    console.log('--- RECREATING INSTANCE FOR QR CODE ---');
 
     try {
-        // 1. Set Webhook
-        console.log(`Setting Webhook to: ${WEBHOOK_URL}...`);
+        // 0. Delete existing instance (ignore error if not exists)
+        console.log(`Deleting instance ${INSTANCE_NAME}...`);
         try {
-            await axios.post(`${API_URL}/webhook/set/${INSTANCE_NAME}`, {
-                "webhook": {
-                    "enabled": true,
-                    "url": WEBHOOK_URL,
-                    "webhookByEvents": false,
-                    "events": ["MESSAGES_UPSERT"]
-                }
-            }, { headers });
-            console.log('✅ Webhook configured successfully!');
+            await axios.delete(`${API_URL}/instance/delete/${INSTANCE_NAME}`, { headers });
+            console.log('✅ Instance deleted.');
         } catch (e) {
-            console.error('❌ Failed to set webhook:', JSON.stringify(e.response?.data || e.message, null, 2));
+            console.log('ℹ️ Instance deletion skipped (maybe didn\'t exist).');
         }
 
-        // 2. Check Connection Status
-        console.log('\nChecking Connection Status...');
-        const status = await axios.get(`${API_URL}/instance/connectionState/${INSTANCE_NAME}`, { headers });
-        console.log('Current State:', status.data?.instance?.state || 'Unknown');
+        // 1. Create Instance
+        console.log(`Creating instance ${INSTANCE_NAME}...`);
+        await axios.post(`${API_URL}/instance/create`, {
+            "instanceName": INSTANCE_NAME,
+            "token": "hexai_token_secure",
+            "qrcode": true,
+            "integration": "WHATSAPP-BAILEYS"
+        }, { headers });
+        console.log('✅ Instance created successfully!');
 
-        // 3. Output Keys for User
+        // 2. Set Webhook
+        console.log(`Setting Webhook to: ${WEBHOOK_URL}...`);
+        await axios.post(`${API_URL}/webhook/set/${INSTANCE_NAME}`, {
+            "webhook": {
+                "enabled": true,
+                "url": WEBHOOK_URL,
+                "webhookByEvents": false,
+                "events": ["MESSAGES_UPSERT"]
+            }
+        }, { headers });
+        console.log('✅ Webhook configured!');
+
+        // 3. Get QR Code
+        console.log('\nGenerating QR Code...');
+        const qr = await axios.get(`${API_URL}/instance/connect/${INSTANCE_NAME}`, { headers });
+        console.log('QR Code Refreshed:', qr.data?.code || qr.data?.base64 ? 'YES' : 'NO');
+
+        // 4. Output Keys for User
         console.log('\n--- CREDENTIALS FOR N8N ---');
         console.log(`Global API Key: ${GLOBAL_KEY}`);
         console.log(`Instance Name:  ${INSTANCE_NAME}`);
         console.log(`Instance Token: hexai_token_secure`);
     } catch (error) {
-        console.error('Error:', error.message);
+        console.error('Error:', JSON.stringify(error.response?.data || error.message, null, 2));
     }
 }
 
