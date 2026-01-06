@@ -2,7 +2,7 @@ const axios = require('axios');
 
 const API_URL = 'http://localhost:8080';
 const GLOBAL_KEY = 'hexai_evolution_global_key_123';
-const INSTANCE_NAME = 'Hexai';
+const INSTANCE_NAME = 'hexai'; // User suggested lowercase
 // Docker internal URL for n8n
 const WEBHOOK_URL = 'http://31.97.20.238:5678/webhook/whatsapp';
 
